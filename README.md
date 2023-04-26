@@ -1,4 +1,6 @@
 # etcd-operator
+// 20230426 学习etcd-operator 创建项目，不作为生产环境使用。
+
 // TODO(user): Add simple overview of use/purpose
 
 ## Description

@@ -19,9 +19,12 @@ package controller
 import (
 	"context"
 
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	etcdv1alpha1 "github.com/wangshaojun11/etcd-operator/api/v1alpha1"
@@ -47,9 +50,54 @@ type EtcdClusterReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.4/pkg/reconcile
 func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
 
-	// TODO(user): your logic here
+	// 1. 获取 EtcdCluster 实例
+	var etcdCluster etcdv1alpha1.EtcdCluster
+	if err := r.Client.Get(ctx, req.NamespacedName, &etcdCluster); err != nil {
+		// 返回err，把这一次调节事件放回队列中，重新处理。
+		// 如果 EtcdCluster 是被删除的(NotFound)，应该被忽略.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+	// 已经获取到了 EtcdCluster 实例
+
+	// 2. 创建或者更新 StatefulSet 以及 Headless SVC 对象
+	// 调协：当前的状态和期望状态进行对比。CreateOrUpdate
+
+	// 2.1 CreateOrUpdate  Service
+	var svc corev1.Service
+	svc.Name = etcdCluster.Name
+	svc.Namespace = etcdCluster.Namespace
+	// 实现调协的函数
+	or, err := ctrl.CreateOrUpdate(ctx, r.Client, &svc, func() error {
+		// 正在调协的函数必须在这里面实现，实际就是拼装service
+		MutateHeadlessSvc(&etcdCluster, &svc)
+		return controllerutil.SetControllerReference(&etcdCluster, &svc, r.Scheme)
+
+	})
+	// 表示调协出错
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	// 输出结果
+	log.Info("CreateOrUpdate", "Service", or)
+
+	// 2.2 CreateOrUpdate  Statefulset
+	var sts appsv1.StatefulSet
+	sts.Name = etcdCluster.Name
+	sts.Namespace = etcdCluster.Namespace
+	// 实现调协的函数
+	or, err = ctrl.CreateOrUpdate(ctx, r.Client, &sts, func() error {
+		// 正在调协的函数必须在这里面实现，实际就是拼装 Statefulset
+		MutateStatefulSet(&etcdCluster, &sts)
+		return controllerutil.SetControllerReference(&etcdCluster, &sts, r.Scheme)
+	})
+	// 表示调协出错
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+	// 输出结果
+	log.Info("CreateOrUpdate", "StatefulSet", or)
 
 	return ctrl.Result{}, nil
 }
