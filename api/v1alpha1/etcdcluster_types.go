@@ -28,8 +28,10 @@ type EtcdClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Size  uint   `json:"siz"`
+	Size  *int32 `json:"siz"`
 	Image string `json:"image"`
+	StorageClass string `json:"storageclass"`
+	StorageSize string `json:"storagesize"`
 }
 
 // EtcdClusterStatus defines the observed state of EtcdCluster

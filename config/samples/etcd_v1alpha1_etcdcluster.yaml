@@ -11,3 +11,5 @@ metadata:
 spec:
   size: 3
   image: wangshaojun11/etcd:v3.4.13
+  storageclass: abc
+  storagesize: 1Gi
