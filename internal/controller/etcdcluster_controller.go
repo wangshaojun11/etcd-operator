@@ -39,6 +39,8 @@ type EtcdClusterReconciler struct {
 //+kubebuilder:rbac:groups=etcd.uisee.com,resources=etcdclusters,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=etcd.uisee.com,resources=etcdclusters/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=etcd.uisee.com,resources=etcdclusters/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -106,5 +108,7 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 func (r *EtcdClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&etcdv1alpha1.EtcdCluster{}).
+		Owns(&appsv1.StatefulSet{}).
+		Owns(&corev1.Service{}).
 		Complete(r)
 }
