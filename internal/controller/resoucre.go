@@ -9,8 +9,9 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
 var (
-    cmd = `HOSTNAME=$(hostname)
+	cmd = `HOSTNAME=$(hostname)
 
 	ETCDCTL_API=3
 	
@@ -120,7 +121,7 @@ var (
 			rm -rf /var/run/etcd/*
 		fi
 	fi`
-	)
+)
 
 // 定义全局标签的key
 var (
@@ -129,8 +130,6 @@ var (
 	// 两处需要使用到此名字
 	EtcdDataDirName = "datadir"
 )
-
-
 
 // Service 调协实现
 func MutateHeadlessSvc(cluster *etcdv1alpha1.EtcdCluster, svc *corev1.Service) {
@@ -259,7 +258,7 @@ func newContainers(cluster *etcdv1alpha1.EtcdCluster) []corev1.Container { //Con
 			},
 			VolumeMounts: []corev1.VolumeMount{
 				corev1.VolumeMount{
-					Name: EtcdDataDirName,
+					Name:      EtcdDataDirName,
 					MountPath: "/var/run/etcd",
 				},
 			},
@@ -271,7 +270,7 @@ func newContainers(cluster *etcdv1alpha1.EtcdCluster) []corev1.Container { //Con
 				PreStop: &corev1.LifecycleHandler{
 					Exec: &corev1.ExecAction{
 						Command: []string{
-							"/bin/sh","-ec",
+							"/bin/sh", "-ec",
 							Lifecmd,
 						},
 					},

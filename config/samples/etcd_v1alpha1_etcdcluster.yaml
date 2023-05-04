@@ -11,5 +11,5 @@ metadata:
 spec:
   size: 3
   image: wangshaojun11/etcd:v3.4.13
-  storageclass: abc
+  storageclass: csi-udisk-rssd
   storagesize: 1Gi

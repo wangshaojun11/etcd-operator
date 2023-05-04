@@ -37,11 +37,18 @@ spec:
             properties:
               image:
                 type: string
-              siz:
+              size:
+                format: int32
                 type: integer
+              storageclass:
+                type: string
+              storagesize:
+                type: string
             required:
             - image
-            - siz
+            - size
+            - storageclass
+            - storagesize
             type: object
           status:
             description: EtcdClusterStatus defines the observed state of EtcdCluster
