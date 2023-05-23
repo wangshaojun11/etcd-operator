@@ -56,7 +56,7 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	// 1. 获取 EtcdCluster 实例
 	var etcdCluster etcdv1alpha1.EtcdCluster
-	if err := r.Get(ctx, req.NamespacedName, &etcdCluster); err != nil { //获取资源用r.Get ,修改使用 r.Client.Get
+	if err := r.Get(ctx, req.NamespacedName, &etcdCluster); err != nil { //获取资源用r.Get 获取本地的cache。修改资源使用 r.Client.Get
 		// 返回err，把这一次调节事件放回队列中，重新处理。
 		// 如果 EtcdCluster 是被删除的(NotFound)，应该被忽略.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
