@@ -22,6 +22,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -70,36 +71,41 @@ func (r *EtcdClusterReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 	var svc corev1.Service
 	svc.Name = etcdCluster.Name
 	svc.Namespace = etcdCluster.Namespace
-	// 实现调协的函数
-	or, err := ctrl.CreateOrUpdate(ctx, r.Client, &svc, func() error {
-		// 正在调协的函数必须在这里面实现，实际就是拼装service
-		MutateHeadlessSvc(&etcdCluster, &svc)
-		return controllerutil.SetControllerReference(&etcdCluster, &svc, r.Scheme)
 
-	})
-	// 表示调协出错
-	if err != nil {
+	// 如果创建不成功则进行重试
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// 实现调协的函数
+		or, err := ctrl.CreateOrUpdate(ctx, r.Client, &svc, func() error {
+			// 正在调协的函数必须在这里面实现，实际就是拼装service
+			MutateHeadlessSvc(&etcdCluster, &svc)
+			return controllerutil.SetControllerReference(&etcdCluster, &svc, r.Scheme)
+
+		})
+		// 输出结果
+		log.Info("CreateOrUpdate", "Service", or)
+		return err
+	}); err != nil { // 表示调协出错
 		return ctrl.Result{}, err
 	}
-	// 输出结果
-	log.Info("CreateOrUpdate", "Service", or)
 
 	// 2.2 CreateOrUpdate  Statefulset
 	var sts appsv1.StatefulSet
 	sts.Name = etcdCluster.Name
 	sts.Namespace = etcdCluster.Namespace
-	// 实现调协的函数
-	or, err = ctrl.CreateOrUpdate(ctx, r.Client, &sts, func() error {
-		// 正在调协的函数必须在这里面实现，实际就是拼装 Statefulset
-		MutateStatefulSet(&etcdCluster, &sts)
-		return controllerutil.SetControllerReference(&etcdCluster, &sts, r.Scheme)
-	})
-	// 表示调协出错
-	if err != nil {
+	// 如果创建不成功则进行重试
+	if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+		// 实现调协的函数
+		or, err := ctrl.CreateOrUpdate(ctx, r.Client, &sts, func() error {
+			// 正在调协的函数必须在这里面实现，实际就是拼装 Statefulset
+			MutateStatefulSet(&etcdCluster, &sts)
+			return controllerutil.SetControllerReference(&etcdCluster, &sts, r.Scheme)
+		})
+		// 输出结果
+		log.Info("CreateOrUpdate", "StatefulSet", or)
+		return err
+	}); err != nil { // 表示调协出错
 		return ctrl.Result{}, err
 	}
-	// 输出结果
-	log.Info("CreateOrUpdate", "StatefulSet", or)
 
 	return ctrl.Result{}, nil
 }
